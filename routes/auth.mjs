@@ -74,11 +74,4 @@ authRouter.post("/login", async (req, res) => {
   res.status(200).json({ message: "Login successfully.", token });
 });
 
-//Get All User Info
-authRouter.get("/users", async (req, res) => {
-  const result = await db.query(`SELECT * FROM users`);
-  console.log(result);
-  res.status(201).json({ message: "OK!" });
-});
-
 export default authRouter;
