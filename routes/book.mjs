@@ -1,13 +1,26 @@
 import { Router } from "express";
 import db from "../utils/db.mjs";
-import { validationCreateBookData } from "../middlewares/book.validation.mjs";
 import { protect } from "../middlewares/protect.mjs";
 
 const bookRouter = Router();
 bookRouter.use(protect);
 
 //create book
-bookRouter.post("/", [validationCreateBookData], async (req, res) => {
+bookRouter.post("/", async (req, res) => {
+  const payload = req.body;
+
+  //check request valid
+  if (
+    payload.title === "" ||
+    payload.description === "" ||
+    payload.author === "" ||
+    payload.username === ""
+  ) {
+    return res
+      .status(401)
+      .json({ message: "Bad Request: Missing required fields." });
+  }
+
   const newBook = {
     ...req.body,
     created_at: new Date(),
@@ -16,13 +29,14 @@ bookRouter.post("/", [validationCreateBookData], async (req, res) => {
 
   try {
     await db.query(
-      `INSERT INTO books (title, description, author, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO books (title, description, author, created_at, updated_at, username) VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         newBook.title,
         newBook.description,
         newBook.author,
         newBook.created_at,
         newBook.updated_at,
+        newBook.username,
       ]
     );
   } catch {
@@ -36,10 +50,21 @@ bookRouter.post("/", [validationCreateBookData], async (req, res) => {
   });
 });
 
-//get all books info
+//get all books on user
 bookRouter.get("/", async (req, res) => {
+  const payload = req.body;
+
+  //check request valid
+  if (payload.username === "") {
+    return res
+      .status(401)
+      .json({ message: "Bad Request: Missing username" });
+  }
+
   try {
-    const result = await db.query(`select * from books`);
+    const result = await db.query(`SELECT * FROM books WHERE username = $1`, [
+      payload.username,
+    ]);
     return res.status(200).json({ data: result.rows });
   } catch (error) {
     return res.status(500).json({ message: "Server could not read books." });
@@ -155,6 +180,7 @@ export default bookRouter;
  *         - title
  *         - description
  *         - author
+ *         - username
  *       properties:
  *         book_id:
  *           type: string
@@ -176,6 +202,9 @@ export default bookRouter;
  *           type: string
  *           format: date
  *           description: The date the book was updated
+ *         username:
+ *           type: string
+ *           description: The user who add the book
  *       example:
  *         id: d5fE_asz
  *         title: The One Thing
@@ -190,6 +219,12 @@ export default bookRouter;
  *   get:
  *     summary: Lists all the books
  *     tags: [Books]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Book'
  *     responses:
  *       200:
  *         description: The list of the books
@@ -199,6 +234,10 @@ export default bookRouter;
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Book'
+ *       401:
+ *         description: Bad Request missing username.
+ *       500:
+ *         description: Server could not read books.
  *   post:
  *     summary: Create a new book
  *     tags: [Books]
