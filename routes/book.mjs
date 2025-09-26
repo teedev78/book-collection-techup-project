@@ -102,18 +102,27 @@ bookRouter.put("/:bookId", async (req, res) => {
   const bookId = req.params.bookId;
   const payload = req.body;
 
+  //check required fields
   if (!payload.title || !payload.description || !payload.author) {
     return res.status(400).json({
       message: "Bad Request: Missing required fields.",
     });
   }
 
-  const validBookId = await db.query(`SELECT * FROM books WHERE book_id = $1`, [
-    bookId,
-  ]);
+  //check valid book
+  try {
+    const validBookId = await db.query(
+      `SELECT * FROM books WHERE book_id = $1`,
+      [bookId]
+    );
 
-  if (validBookId.rows.length === 0) {
-    return res.status(404).json({ message: "Book not found." });
+    if (validBookId.rows.length === 0) {
+      return res.status(404).json({ message: "Book not found." });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server could not update book because database connection",
+    });
   }
 
   const updatedBook = { ...req.body, updated_at: new Date() };
