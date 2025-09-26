@@ -1,6 +1,5 @@
 import express from "express";
 import "dotenv/config";
-import bodyParser from "body-parser";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import bookRouter from "./routes/book.mjs";

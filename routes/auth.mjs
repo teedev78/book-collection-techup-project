@@ -17,9 +17,20 @@ authRouter.post("/register", async (req, res) => {
     updated_at: new Date(),
   };
 
+  //check username existed
+  const userExisted = await db.query(`SELECT * FROM users WHERE username = $1`, [
+    user.username,
+  ]);
+
+  if (userExisted.rows.length !== 0) {
+    return res.status(400).json({ message: "User already existed." });
+  }
+
+  //hash password
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(user.password, salt);
 
+  //create user in db
   try {
     await db.query(
       `INSERT INTO users (username, password, firstname, lastname, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -43,7 +54,7 @@ authRouter.post("/register", async (req, res) => {
 authRouter.post("/login", async (req, res) => {
   const payload = req.body;
 
-  //check have user
+  //check user existed
   const user = await db.query(`SELECT * FROM users WHERE username = $1`, [
     payload.username,
   ]);
@@ -62,7 +73,7 @@ authRouter.post("/login", async (req, res) => {
     return res.status(400).json({ message: "password not valid." });
   }
 
-  //set token
+  //set and return token
   const token = jwt.sign(
     {
       id: user.user_id,
@@ -116,7 +127,7 @@ export default authRouter;
  *         lastname: Doe
  *         created_at: 2020-03-10T04:05:06.157Z
  *         updated_at: 2020-03-10T04:05:06.157Z
- * 
+ *
  * tags:
  *   name: Users
  *   description: The users authenticate API
@@ -139,7 +150,9 @@ export default authRouter;
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/User'
- *       500: 
+ *       400:
+ *          description: User already existed.
+ *       500:
  *          description: Server could not create user.
  * /login:
  *   post:
@@ -162,5 +175,5 @@ export default authRouter;
  *         description: password not valid.
  *       404:
  *         decription: User not found.
- *       
+ *
  */
