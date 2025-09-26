@@ -13,7 +13,6 @@ bookRouter.post("/", [validationCreateBookData], async (req, res) => {
     created_at: new Date(),
     updated_at: new Date(),
   };
-  // console.log(newBook);
 
   try {
     await db.query(
@@ -41,7 +40,6 @@ bookRouter.post("/", [validationCreateBookData], async (req, res) => {
 bookRouter.get("/", async (req, res) => {
   try {
     const result = await db.query(`select * from books`);
-    // console.log(result);
     return res.status(200).json({ data: result.rows });
   } catch (error) {
     return res.status(500).json({ message: "Server could not read books." });
@@ -55,7 +53,6 @@ bookRouter.get("/:bookId", async (req, res) => {
     const result = await db.query(`select * from books where book_id = $1`, [
       bookIdFromClient,
     ]);
-    // console.log(result);
 
     if (!result.rows[0]) {
       return res.status(404).json({
@@ -89,7 +86,7 @@ bookRouter.put("/:bookId", async (req, res) => {
     );
 
     if (validBookId.rows.length === 0) {
-      return res.status(404).json({ message: "Book ID not found." });
+      return res.status(404).json({ message: "Book not found." });
     }
   } catch (error) {
     return res.status(500).json({
@@ -133,7 +130,7 @@ bookRouter.delete("/:bookId", async (req, res) => {
     );
 
     if (validBookId.rows.length === 0) {
-      return res.status(404).json({ message: "Book ID not found." });
+      return res.status(404).json({ message: "Book not found." });
     }
   } catch (error) {
     return res.status(500).json({
@@ -147,3 +144,143 @@ bookRouter.delete("/:bookId", async (req, res) => {
 });
 
 export default bookRouter;
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Book:
+ *       type: object
+ *       required:
+ *         - title
+ *         - description
+ *         - author
+ *       properties:
+ *         book_id:
+ *           type: string
+ *           description: The auto-generated id of the book
+ *         title:
+ *           type: string
+ *           description: The title of your book
+ *         description:
+ *           type: string
+ *           description: The description of your book
+ *         author:
+ *           type: string
+ *           description: The book author
+ *         created_at:
+ *           type: string
+ *           format: date
+ *           description: The date the book was added
+ *         updated_at:
+ *           type: string
+ *           format: date
+ *           description: The date the book was updated
+ *       example:
+ *         id: d5fE_asz
+ *         title: The One Thing
+ *         description: about something in the world
+ *         author: Alexar Lorington
+ *         created_at: 2020-03-10T04:05:06.157Z
+ *         updated_at: 2020-03-10T04:05:06.157Z
+ * tags:
+ *   name: Books
+ *   description: The books managing API
+ * /books:
+ *   get:
+ *     summary: Lists all the books
+ *     tags: [Books]
+ *     responses:
+ *       200:
+ *         description: The list of the books
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Book'
+ *   post:
+ *     summary: Create a new book
+ *     tags: [Books]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Book'
+ *     responses:
+ *       201:
+ *         description: Created book successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Book'
+ *       500:
+ *         description: Server could not create book.
+ * /books/{id}:
+ *   get:
+ *     summary: Get the book by id
+ *     tags: [Books]
+ *     parameters:
+ *       - in: path
+ *         name: book_id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The book id
+ *     responses:
+ *       200:
+ *         description: The book response by id
+ *         contens:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Book'
+ *       404:
+ *         description: Server could not find a requested book.
+ *       500:
+ *         description: Server could not read books from id.
+ *   put:
+ *    summary: Update the book by the id
+ *    tags: [Books]
+ *    parameters:
+ *      - in: path
+ *        name: book_id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: The book id
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/Book'
+ *    responses:
+ *      200:
+ *        description: update book info successfully.
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/Book'
+ *      404:
+ *        description: Book not found.
+ *      500:
+ *        description: Server could not update book because database connection.
+ *   delete:
+ *     summary: Remove the book by id
+ *     tags: [Books]
+ *     parameters:
+ *       - in: path
+ *         name: book_id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The book id
+ *     responses:
+ *       200:
+ *         description: Book was deleted.
+ *       404:
+ *         description: Book not found.
+ *       500:
+ *         description: Server could not update book because database connection.
+ */

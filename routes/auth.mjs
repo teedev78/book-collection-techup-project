@@ -53,7 +53,10 @@ authRouter.post("/login", async (req, res) => {
   }
 
   //check password valid
-  const isValidPassword = await bcrypt.compare(payload.password, user.rows[0].password);
+  const isValidPassword = await bcrypt.compare(
+    payload.password,
+    user.rows[0].password
+  );
 
   if (!isValidPassword) {
     return res.status(400).json({ message: "password not valid." });
@@ -75,3 +78,89 @@ authRouter.post("/login", async (req, res) => {
 });
 
 export default authRouter;
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - username
+ *         - password
+ *         - firstname
+ *         - lastname
+ *       properties:
+ *         user_id:
+ *           type: string
+ *           description: The auto-generated id of the user
+ *         username:
+ *           type: string
+ *           description: The username of your user
+ *         password:
+ *           type: string
+ *           description: The password of your user
+ *         created_at:
+ *           type: string
+ *           format: date
+ *           description: The date the user was created
+ *         updated_at:
+ *           type: string
+ *           format: date
+ *           description: The date the user was updated
+ *       example:
+ *         id: d5fE_asz
+ *         username: admin
+ *         password: admin_password
+ *         firstname: John
+ *         lastname: Doe
+ *         created_at: 2020-03-10T04:05:06.157Z
+ *         updated_at: 2020-03-10T04:05:06.157Z
+ * 
+ * tags:
+ *   name: Users
+ *   description: The users authenticate API
+ * /register:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *   responses:
+ *       201:
+ *         description: User has been created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       500: 
+ *          description: Server could not create user.
+ * /login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *   responses:
+ *       200:
+ *         description: Login successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: password not valid.
+ *       404:
+ *         decription: User not found.
+ *       
+ */
