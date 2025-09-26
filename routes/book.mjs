@@ -17,7 +17,7 @@ bookRouter.post("/", async (req, res) => {
     payload.username === ""
   ) {
     return res
-      .status(401)
+      .status(400)
       .json({ message: "Bad Request: Missing required fields." });
   }
 
@@ -40,7 +40,7 @@ bookRouter.post("/", async (req, res) => {
       ]
     );
   } catch {
-    return res.status(400).json({
+    return res.status(500).json({
       message: "Server could not create book.",
     });
   }
@@ -55,10 +55,8 @@ bookRouter.get("/", async (req, res) => {
   const payload = req.body;
 
   //check request valid
-  if (payload.username === "") {
-    return res
-      .status(401)
-      .json({ message: "Bad Request: Missing username" });
+  if (!payload.username) {
+    return res.status(400).json({ message: "Bad Request: Missing username" });
   }
 
   try {
@@ -73,15 +71,21 @@ bookRouter.get("/", async (req, res) => {
 
 //get book info by id
 bookRouter.get("/:bookId", async (req, res) => {
-  const bookIdFromClient = req.params.bookId;
+  const bookId = req.params.bookId;
+
+  //check request valid
+  if (!bookId) {
+    return res.status(400).json({ message: "Bad Request: Missing username" });
+  }
+
   try {
-    const result = await db.query(`select * from books where book_id = $1`, [
-      bookIdFromClient,
+    const result = await db.query(`SELECT * FROM books WHERE book_id = $1`, [
+      bookId,
     ]);
 
     if (!result.rows[0]) {
       return res.status(404).json({
-        message: `Server could not find a requested book (book_id: ${req.params.bookId})`,
+        message: `Book not found.`,
       });
     }
 
@@ -104,19 +108,12 @@ bookRouter.put("/:bookId", async (req, res) => {
     });
   }
 
-  try {
-    const validBookId = await db.query(
-      `SELECT * FROM books WHERE book_id = $1`,
-      [bookId]
-    );
+  const validBookId = await db.query(`SELECT * FROM books WHERE book_id = $1`, [
+    bookId,
+  ]);
 
-    if (validBookId.rows.length === 0) {
-      return res.status(404).json({ message: "Book not found." });
-    }
-  } catch (error) {
-    return res.status(500).json({
-      message: "Server could not update book because database connection",
-    });
+  if (validBookId.rows.length === 0) {
+    return res.status(404).json({ message: "Book not found." });
   }
 
   const updatedBook = { ...req.body, updated_at: new Date() };
@@ -234,7 +231,7 @@ export default bookRouter;
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Book'
- *       401:
+ *       400:
  *         description: Bad Request missing username.
  *       500:
  *         description: Server could not read books.
@@ -254,6 +251,8 @@ export default bookRouter;
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Book'
+ *       400:
+ *         description: Bad Request missing required fields.
  *       500:
  *         description: Server could not create book.
  * /books/{id}:
@@ -274,6 +273,8 @@ export default bookRouter;
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Book'
+ *       400:
+ *         description: Bad Request missing required fields.
  *       404:
  *         description: Server could not find a requested book.
  *       500:
@@ -301,6 +302,8 @@ export default bookRouter;
  *          application/json:
  *            schema:
  *              $ref: '#/components/schemas/Book'
+ *      400:
+ *        description: Bad Request missing required fields.
  *      404:
  *        description: Book not found.
  *      500:
